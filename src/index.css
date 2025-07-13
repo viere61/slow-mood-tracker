@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: #f8f9fa;
+    color: #2d3748;
+  }
+}
+
+@layer components {
+  .slow-button {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-300 ease-in-out;
+  }
+  
+  .slow-button-primary {
+    @apply slow-button bg-slow-blue text-white hover:bg-blue-600 active:scale-95;
+  }
+  
+  .slow-button-secondary {
+    @apply slow-button bg-white text-slow-dark border border-gray-300 hover:bg-gray-50 active:scale-95;
+  }
+  
+  .slow-card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+  }
+  
+  .mood-slider {
+    @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer;
+  }
+  
+  .mood-slider::-webkit-slider-thumb {
+    @apply appearance-none w-6 h-6 rounded-full bg-slow-blue cursor-pointer;
+  }
+  
+  .mood-slider::-moz-range-thumb {
+    @apply w-6 h-6 rounded-full bg-slow-blue cursor-pointer border-0;
+  }
+} 

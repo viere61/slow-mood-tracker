@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slow Sonic Mood Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: #f8f9fa;
+            color: #2d3748;
+        }
+        .slow-button {
+            @apply px-6 py-3 rounded-lg font-medium transition-all duration-300 ease-in-out;
+        }
+        .slow-button-primary {
+            @apply slow-button bg-blue-500 text-white hover:bg-blue-600 active:scale-95;
+        }
+        .slow-button-secondary {
+            @apply slow-button bg-white text-gray-800 border border-gray-300 hover:bg-gray-50 active:scale-95;
+        }
+        .slow-card {
+            @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+        }
+        .mood-slider {
+            @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer;
+        }
+        .mood-slider::-webkit-slider-thumb {
+            @apply appearance-none w-6 h-6 rounded-full bg-blue-500 cursor-pointer;
+        }
+        .mood-slider::-moz-range-thumb {
+            @apply w-6 h-6 rounded-full bg-blue-500 cursor-pointer border-0;
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-100">
+            <div class="container mx-auto px-4 py-4 max-w-md">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="music" class="w-8 h-8 text-blue-500"></i>
+                        <div>
+                            <h1 class="text-xl font-semibold text-gray-800">Slow Sonic</h1>
+                            <p class="text-sm text-gray-500">Mood Tracker</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="settingsBtn" class="p-2 text-gray-500 hover:text-gray-800 transition-colors">
+                            <i data-lucide="settings" class="w-5 h-5"></i>
+                        </button>
+                        <div id="loggingIndicator" class="hidden flex items-center space-x-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                            <i data-lucide="clock" class="w-3 h-3"></i>
+                            <span>Logging Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-8 max-w-md">
+            <!-- Home View -->
+            <div id="homeView" class="space-y-6 animate-fade-in">
+                <div class="text-center space-y-2">
+                    <h2 class="text-2xl font-light text-gray-800">Welcome</h2>
+                    <p class="text-gray-600 text-sm">
+                        A mindful approach to tracking your emotional journey through music
+                    </p>
+                </div>
+
+                <div class="slow-card">
+                    <div class="flex items-start space-x-3">
+                        <i data-lucide="clock" class="w-6 h-6 mt-1 text-green-600"></i>
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800">Time to reflect</h3>
+                            <p class="text-sm text-gray-600 mt-1">The invitation to log your mood is now open. Take a moment to pause and consider how you're feeling.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <button id="logMoodBtn" class="w-full slow-button-primary flex items-center justify-center space-x-2">
+                        <i data-lucide="music" class="w-5 h-5"></i>
+                        <span>Log My Mood</span>
+                    </button>
+
+                    <button id="reviewBtn" class="w-full slow-button-secondary flex items-center justify-center space-x-2">
+                        <i data-lucide="eye" class="w-5 h-5"></i>
+                        <span>Reveal Random Past Mood</span>
+                    </button>
+                </div>
+
+                <div class="text-center text-xs text-gray-500 space-y-2">
+                    <p>"The slow technology approach invites us to pause, reflect, and find meaning in the spaces between our digital interactions."</p>
+                    <p>This app operates on its own time, encouraging deeper self-reflection through music and mindful engagement.</p>
+                </div>
+            </div>
+
+            <!-- Logging View -->
+            <div id="loggingView" class="hidden space-y-6 animate-fade-in">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-medium text-gray-800">Log Your Mood</h2>
+                    <button id="cancelLogBtn" class="p-2 text-gray-500 hover:text-gray-800 transition-colors">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <div class="slow-card">
+                    <label class="block text-sm font-medium text-gray-800 mb-3">
+                        How are you feeling right now?
+                    </label>
+                    <div class="space-y-3">
+                        <input type="range" id="moodSlider" min="1" max="10" value="5" class="mood-slider">
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>Very Unpleasant</span>
+                            <span id="moodLabel" class="font-medium text-gray-800">Neutral</span>
+                            <span>Very Pleasant</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="slow-card">
+                    <label class="block text-sm font-medium text-gray-800 mb-3">
+                        What song reflects your mood?
+                    </label>
+                    <div class="space-y-3">
+                        <input type="text" id="songTitle" placeholder="Song title" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <input type="text" id="songArtist" placeholder="Artist" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <div class="slow-card">
+                    <label class="block text-sm font-medium text-gray-800 mb-3">
+                        Any additional thoughts? (optional)
+                    </label>
+                    <textarea id="thoughts" placeholder="Reflect on your mood, the song choice, or anything else..." rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
+                </div>
+
+                <button id="saveMoodBtn" class="w-full slow-button-primary flex items-center justify-center space-x-2">
+                    <i data-lucide="save" class="w-5 h-5"></i>
+                    <span>Save Mood Entry</span>
+                </button>
+            </div>
+
+            <!-- Review View -->
+            <div id="reviewView" class="hidden space-y-6 animate-fade-in">
+                <div class="flex items-center justify-between">
+                    <button id="backFromReviewBtn" class="flex items-center space-x-2 text-gray-500 hover:text-gray-800 transition-colors">
+                        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        <span>Back</span>
+                    </button>
+                    <h2 class="text-xl font-medium text-gray-800">Past Mood Reveal</h2>
+                    <button id="revealNewBtn" class="p-2 text-gray-500 hover:text-gray-800 transition-colors">
+                        <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <div id="reviewContent" class="space-y-6">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settingsView" class="hidden space-y-6 animate-fade-in">
+                <div class="flex items-center justify-between">
+                    <button id="backFromSettingsBtn" class="flex items-center space-x-2 text-gray-500 hover:text-gray-800 transition-colors">
+                        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        <span>Back</span>
+                    </button>
+                    <h2 class="text-xl font-medium text-gray-800">Settings</h2>
+                    <button id="saveSettingsBtn" class="text-blue-500 hover:text-blue-600 font-medium">Save</button>
+                </div>
+
+                <div class="slow-card">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <i data-lucide="clock" class="w-5 h-5 text-blue-500"></i>
+                        <h3 class="font-medium text-gray-800">Daily Logging Window</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">
+                        Choose when you'd like the app to potentially invite you to log your mood each day.
+                    </p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-800 mb-2">Start Time</label>
+                            <select id="startTime" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <!-- Options will be populated by JavaScript -->
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-800 mb-2">End Time</label>
+                            <select id="endTime" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <!-- Options will be populated by JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+                        <p class="text-sm text-blue-800">
+                            <strong>Note:</strong> The app will randomly select one hour within this window each day 
+                            when you can log your mood. This creates anticipation and encourages mindful reflection.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="slow-card">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <i data-lucide="trash-2" class="w-5 h-5 text-red-500"></i>
+                        <h3 class="font-medium text-gray-800">Data Management</h3>
+                    </div>
+                    
+                    <p class="text-sm text-gray-600 mb-4">
+                        All your mood data is stored locally on your device. You can clear it at any time.
+                    </p>
+                    
+                    <button id="clearDataBtn" class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm">
+                        Clear All Data
+                    </button>
+                </div>
+
+                <div class="text-center text-xs text-gray-500 space-y-2">
+                    <p>"Slow technology is not about doing things slowly, but about creating space for reflection and meaning-making in our digital interactions."</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // App state
+        let currentView = 'home';
+        let moodEntries = JSON.parse(localStorage.getItem('slow-mood-entries') || '[]');
+        let settings = JSON.parse(localStorage.getItem('slow-mood-settings') || JSON.stringify({
+            dailyWindowStart: 9,
+            dailyWindowEnd: 22,
+            emailNotifications: false
+        }));
+
+        // DOM elements
+        const views = {
+            home: document.getElementById('homeView'),
+            logging: document.getElementById('loggingView'),
+            review: document.getElementById('reviewView'),
+            settings: document.getElementById('settingsView')
+        };
+
+        const buttons = {
+            logMood: document.getElementById('logMoodBtn'),
+            review: document.getElementById('reviewBtn'),
+            settings: document.getElementById('settingsBtn'),
+            cancelLog: document.getElementById('cancelLogBtn'),
+            saveMood: document.getElementById('saveMoodBtn'),
+            backFromReview: document.getElementById('backFromReviewBtn'),
+            backFromSettings: document.getElementById('backFromSettingsBtn'),
+            saveSettings: document.getElementById('saveSettingsBtn'),
+            clearData: document.getElementById('clearDataBtn'),
+            revealNew: document.getElementById('revealNewBtn')
+        };
+
+        const inputs = {
+            moodSlider: document.getElementById('moodSlider'),
+            moodLabel: document.getElementById('moodLabel'),
+            songTitle: document.getElementById('songTitle'),
+            songArtist: document.getElementById('songArtist'),
+            thoughts: document.getElementById('thoughts'),
+            startTime: document.getElementById('startTime'),
+            endTime: document.getElementById('endTime')
+        };
+
+        // Utility functions
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            if (date.toDateString() === today.toDateString()) {
+                return 'Today';
+            } else if (date.toDateString() === yesterday.toDateString()) {
+                return 'Yesterday';
+            } else {
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            }
+        }
+
+        function formatHour(hour) {
+            const date = new Date();
+            date.setHours(hour, 0, 0, 0);
+            return date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+        }
+
+        function getMoodLabel(value) {
+            if (value <= 2) return 'Very Unpleasant';
+            if (value <= 4) return 'Unpleasant';
+            if (value <= 6) return 'Neutral';
+            if (value <= 8) return 'Pleasant';
+            return 'Very Pleasant';
+        }
+
+        function getMoodColor(value) {
+            if (value <= 2) return 'text-red-600';
+            if (value <= 4) return 'text-orange-600';
+            if (value <= 6) return 'text-yellow-600';
+            if (value <= 8) return 'text-green-600';
+            return 'text-blue-600';
+        }
+
+        function showView(viewName) {
+            Object.values(views).forEach(view => view.classList.add('hidden'));
+            views[viewName].classList.remove('hidden');
+            currentView = viewName;
+        }
+
+        function populateTimeOptions() {
+            const startSelect = inputs.startTime;
+            const endSelect = inputs.endTime;
+            
+            startSelect.innerHTML = '';
+            endSelect.innerHTML = '';
+            
+            for (let i = 0; i < 24; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = formatHour(i);
+                startSelect.appendChild(option.cloneNode(true));
+                endSelect.appendChild(option);
+            }
+            
+            startSelect.value = settings.dailyWindowStart;
+            endSelect.value = settings.dailyWindowEnd;
+        }
+
+        function revealRandomMood() {
+            if (moodEntries.length === 0) {
+                document.getElementById('reviewContent').innerHTML = `
+                    <div class="slow-card text-center py-12">
+                        <i data-lucide="music" class="w-12 h-12 text-gray-400 mx-auto mb-4"></i>
+                        <p class="text-gray-600">No mood entries found yet.</p>
+                        <p class="text-sm text-gray-500 mt-2">Start logging your moods to see them here.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            const randomEntry = moodEntries[Math.floor(Math.random() * moodEntries.length)];
+            
+            document.getElementById('reviewContent').innerHTML = `
+                <div class="space-y-6">
+                    <div class="slow-card bg-blue-50 border-blue-200">
+                        <div class="flex items-center space-x-2 text-blue-700">
+                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                            <span class="font-medium">${formatDate(randomEntry.date)}</span>
+                        </div>
+                    </div>
+
+                    <div class="slow-card">
+                        <div class="text-center space-y-2">
+                            <div class="text-4xl font-light ${getMoodColor(randomEntry.moodValue)}">
+                                ${randomEntry.moodValue}/10
+                            </div>
+                            <p class="text-sm text-gray-600">${getMoodLabel(randomEntry.moodValue)}</p>
+                        </div>
+                    </div>
+
+                    <div class="slow-card bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
+                        <div class="text-center space-y-4">
+                            <i data-lucide="music" class="w-12 h-12 text-blue-500 mx-auto"></i>
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-800">${randomEntry.song.title}</h3>
+                                <p class="text-gray-600">${randomEntry.song.artist}</p>
+                            </div>
+                            <p class="text-sm text-gray-500 italic">
+                                "This song captured your mood on ${formatDate(randomEntry.date)}"
+                            </p>
+                        </div>
+                    </div>
+
+                    ${randomEntry.thoughts ? `
+                        <div class="slow-card">
+                            <h4 class="text-sm font-medium text-gray-800 mb-3">Your Thoughts</h4>
+                            <p class="text-gray-700 italic">"${randomEntry.thoughts}"</p>
+                        </div>
+                    ` : ''}
+
+                    <div class="slow-card bg-yellow-50 border-yellow-200">
+                        <div class="text-center space-y-3">
+                            <i data-lucide="heart" class="w-6 h-6 text-yellow-600 mx-auto"></i>
+                            <p class="text-sm text-yellow-800">
+                                Take a moment to reflect on this past mood. How does it relate to where you are now?
+                            </p>
+                            <p class="text-xs text-yellow-700">
+                                Consider listening to "${randomEntry.song.title}" again to deepen your reflection.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // Event listeners
+        buttons.logMood.addEventListener('click', () => showView('logging'));
+        buttons.review.addEventListener('click', () => {
+            showView('review');
+            revealRandomMood();
+        });
+        buttons.settings.addEventListener('click', () => {
+            showView('settings');
+            populateTimeOptions();
+        });
+
+        buttons.cancelLog.addEventListener('click', () => showView('home'));
+        buttons.backFromReview.addEventListener('click', () => showView('home'));
+        buttons.backFromSettings.addEventListener('click', () => showView('home'));
+
+        buttons.saveMood.addEventListener('click', () => {
+            const songTitle = inputs.songTitle.value.trim();
+            const songArtist = inputs.songArtist.value.trim();
+            
+            if (!songTitle || !songArtist) {
+                alert('Please enter both song title and artist');
+                return;
+            }
+
+            const entry = {
+                id: Date.now().toString(),
+                date: new Date().toISOString().split('T')[0],
+                moodValue: parseInt(inputs.moodSlider.value),
+                descriptors: [],
+                contexts: [],
+                song: {
+                    title: songTitle,
+                    artist: songArtist
+                },
+                thoughts: inputs.thoughts.value.trim() || undefined
+            };
+
+            moodEntries.push(entry);
+            localStorage.setItem('slow-mood-entries', JSON.stringify(moodEntries));
+
+            // Reset form
+            inputs.moodSlider.value = 5;
+            inputs.moodLabel.textContent = 'Neutral';
+            inputs.songTitle.value = '';
+            inputs.songArtist.value = '';
+            inputs.thoughts.value = '';
+
+            showView('home');
+        });
+
+        buttons.saveSettings.addEventListener('click', () => {
+            settings.dailyWindowStart = parseInt(inputs.startTime.value);
+            settings.dailyWindowEnd = parseInt(inputs.endTime.value);
+            localStorage.setItem('slow-mood-settings', JSON.stringify(settings));
+            showView('home');
+        });
+
+        buttons.clearData.addEventListener('click', () => {
+            if (confirm('This will permanently delete all your mood entries and reset your settings. This action cannot be undone.')) {
+                localStorage.removeItem('slow-mood-entries');
+                localStorage.removeItem('slow-mood-settings');
+                moodEntries = [];
+                settings = {
+                    dailyWindowStart: 9,
+                    dailyWindowEnd: 22,
+                    emailNotifications: false
+                };
+                showView('home');
+            }
+        });
+
+        buttons.revealNew.addEventListener('click', () => {
+            revealRandomMood();
+        });
+
+        // Update mood label when slider changes
+        inputs.moodSlider.addEventListener('input', (e) => {
+            inputs.moodLabel.textContent = getMoodLabel(parseInt(e.target.value));
+        });
+
+        // Initialize
+        populateTimeOptions();
+    </script>
+</body>
+</html> 
