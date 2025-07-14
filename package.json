@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "name": "slow-sonic-mood-tracker",
   "version": "1.0.0",
   "description": "A slow technology-inspired mood tracker that uses music as a reflective anchor",
@@ -31,34 +30,4 @@
     "typescript": "^5.0.2",
     "vite": "^4.4.5"
   }
-} 
-=======
-  "name": "time-gating-test",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.30.1",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^4.6.0",
-    "eslint": "^9.30.1",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.20",
-    "globals": "^16.3.0",
-    "typescript": "~5.8.3",
-    "typescript-eslint": "^8.35.1",
-    "vite": "^7.0.4"
-  }
 }
->>>>>>> d873b2b (2nd version, now: 1) added time gating function 2) able to delete all data or reset today's log status)

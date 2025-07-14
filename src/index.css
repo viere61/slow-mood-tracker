@@ -72,7 +72,6 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
-
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
@@ -110,3 +109,4 @@ button:focus-visible {
   }
 }
 >>>>>>> d873b2b (2nd version, now: 1) added time gating function 2) able to delete all data or reset today's log status)
+

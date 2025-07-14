@@ -1,7 +1,5 @@
-<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
-<<<<<<< HEAD
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -237,9 +235,15 @@
                         All your mood data is stored locally on your device. You can clear it at any time.
                     </p>
                     
-                    <button id="clearDataBtn" class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm">
-                        Clear All Data
-                    </button>
+                    <div class="space-y-3">
+                        <button id="clearDataBtn" class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm">
+                            Clear All Data
+                        </button>
+                        
+                        <button id="resetTodayBtn" class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors text-sm">
+                            Reset Today's Log Status
+                        </button>
+                    </div>
                 </div>
 
                 <div class="text-center text-xs text-gray-500 space-y-2">
@@ -261,6 +265,8 @@
             dailyWindowEnd: 22,
             emailNotifications: false
         }));
+        let todayLogStatus = JSON.parse(localStorage.getItem('slow-mood-today-logged') || 'false');
+        let todayLoggingHour = JSON.parse(localStorage.getItem('slow-mood-today-hour') || 'null');
 
         // DOM elements
         const views = {
@@ -280,6 +286,7 @@
             backFromSettings: document.getElementById('backFromSettingsBtn'),
             saveSettings: document.getElementById('saveSettingsBtn'),
             clearData: document.getElementById('clearDataBtn'),
+            resetToday: document.getElementById('resetTodayBtn'),
             revealNew: document.getElementById('revealNewBtn')
         };
 
@@ -356,6 +363,82 @@
             endSelect.value = settings.dailyWindowEnd;
         }
 
+        // Time-gating functionality
+        function checkIfNewDay() {
+            const today = new Date().toDateString();
+            const lastLoggedDate = localStorage.getItem('slow-mood-last-logged-date');
+            
+            if (lastLoggedDate !== today) {
+                // New day, reset logging status and generate new hour
+                localStorage.setItem('slow-mood-last-logged-date', today);
+                localStorage.setItem('slow-mood-today-logged', 'false');
+                localStorage.setItem('slow-mood-today-hour', 'null');
+                todayLogStatus = false;
+                todayLoggingHour = null;
+                generateTodayLoggingHour();
+            }
+        }
+
+        function generateTodayLoggingHour() {
+            if (todayLoggingHour === null) {
+                const startHour = settings.dailyWindowStart;
+                const endHour = settings.dailyWindowEnd;
+                const availableHours = [];
+                
+                for (let hour = startHour; hour < endHour; hour++) {
+                    availableHours.push(hour);
+                }
+                
+                if (availableHours.length > 0) {
+                    todayLoggingHour = availableHours[Math.floor(Math.random() * availableHours.length)];
+                    localStorage.setItem('slow-mood-today-hour', JSON.stringify(todayLoggingHour));
+                }
+            }
+        }
+
+        function isLoggingAllowed() {
+            checkIfNewDay();
+            generateTodayLoggingHour();
+            
+            if (todayLogStatus) {
+                return false; // Already logged today
+            }
+            
+            const now = new Date();
+            const currentHour = now.getHours();
+            
+            return currentHour === todayLoggingHour;
+        }
+
+        function updateLoggingIndicator() {
+            const indicator = document.getElementById('loggingIndicator');
+            const logButton = buttons.logMood;
+            
+            if (isLoggingAllowed()) {
+                indicator.classList.remove('hidden');
+                logButton.disabled = false;
+                logButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                logButton.classList.add('slow-button-primary');
+            } else {
+                indicator.classList.add('hidden');
+                if (todayLogStatus) {
+                    logButton.disabled = true;
+                    logButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    logButton.classList.remove('slow-button-primary');
+                    logButton.classList.add('slow-button-secondary');
+                    logButton.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i><span>Already Logged Today</span>';
+                } else {
+                    logButton.disabled = true;
+                    logButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    logButton.classList.remove('slow-button-primary');
+                    logButton.classList.add('slow-button-secondary');
+                    const nextHour = todayLoggingHour !== null ? formatHour(todayLoggingHour) : 'TBD';
+                    logButton.innerHTML = `<i data-lucide="clock" class="w-5 h-5"></i><span>Logging at ${nextHour}</span>`;
+                }
+            }
+            lucide.createIcons();
+        }
+
         function revealRandomMood() {
             if (moodEntries.length === 0) {
                 document.getElementById('reviewContent').innerHTML = `
@@ -426,11 +509,24 @@
         }
 
         // Event listeners
-        buttons.logMood.addEventListener('click', () => showView('logging'));
+        buttons.logMood.addEventListener('click', () => {
+            if (isLoggingAllowed()) {
+                showView('logging');
+            } else {
+                if (todayLogStatus) {
+                    alert('You have already logged your mood today. Come back tomorrow for a new reflection opportunity.');
+                } else {
+                    const nextHour = todayLoggingHour !== null ? formatHour(todayLoggingHour) : 'TBD';
+                    alert(`Logging is only available at ${nextHour}. This creates anticipation and encourages mindful reflection.`);
+                }
+            }
+        });
+        
         buttons.review.addEventListener('click', () => {
             showView('review');
             revealRandomMood();
         });
+        
         buttons.settings.addEventListener('click', () => {
             showView('settings');
             populateTimeOptions();
@@ -465,6 +561,10 @@
             moodEntries.push(entry);
             localStorage.setItem('slow-mood-entries', JSON.stringify(moodEntries));
 
+            // Mark today as logged
+            todayLogStatus = true;
+            localStorage.setItem('slow-mood-today-logged', JSON.stringify(true));
+
             // Reset form
             inputs.moodSlider.value = 5;
             inputs.moodLabel.textContent = 'Neutral';
@@ -473,26 +573,53 @@
             inputs.thoughts.value = '';
 
             showView('home');
+            updateLoggingIndicator();
         });
 
         buttons.saveSettings.addEventListener('click', () => {
             settings.dailyWindowStart = parseInt(inputs.startTime.value);
             settings.dailyWindowEnd = parseInt(inputs.endTime.value);
             localStorage.setItem('slow-mood-settings', JSON.stringify(settings));
+            
+            // Regenerate today's logging hour with new settings
+            todayLoggingHour = null;
+            localStorage.setItem('slow-mood-today-hour', 'null');
+            generateTodayLoggingHour();
+            
             showView('home');
+            updateLoggingIndicator();
         });
 
         buttons.clearData.addEventListener('click', () => {
             if (confirm('This will permanently delete all your mood entries and reset your settings. This action cannot be undone.')) {
                 localStorage.removeItem('slow-mood-entries');
                 localStorage.removeItem('slow-mood-settings');
+                localStorage.removeItem('slow-mood-today-logged');
+                localStorage.removeItem('slow-mood-today-hour');
+                localStorage.removeItem('slow-mood-last-logged-date');
                 moodEntries = [];
                 settings = {
                     dailyWindowStart: 9,
                     dailyWindowEnd: 22,
                     emailNotifications: false
                 };
+                todayLogStatus = false;
+                todayLoggingHour = null;
                 showView('home');
+                updateLoggingIndicator();
+            }
+        });
+
+        buttons.resetToday.addEventListener('click', () => {
+            if (confirm('This will reset today\'s logging status, allowing you to log your mood again today. Continue?')) {
+                localStorage.removeItem('slow-mood-today-logged');
+                localStorage.removeItem('slow-mood-today-hour');
+                localStorage.removeItem('slow-mood-last-logged-date');
+                todayLogStatus = false;
+                todayLoggingHour = null;
+                generateTodayLoggingHour();
+                showView('home');
+                updateLoggingIndicator();
             }
         });
 
@@ -507,31 +634,10 @@
 
         // Initialize
         populateTimeOptions();
+        updateLoggingIndicator();
+        
+        // Check logging status every minute
+        setInterval(updateLoggingIndicator, 60000);
     </script>
 </body>
 </html> 
-=======
-<!doctype html>
-<html lang="en">
-=======
->>>>>>> f5cb3c7 (this is the actual 2nd version, the earlier one actually does not funtion as expected)
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<<<<<<< HEAD
-    <title>Vite + React + TS</title>
-=======
-    <title>Time-Gating Test</title>
->>>>>>> f5cb3c7 (this is the actual 2nd version, the earlier one actually does not funtion as expected)
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-<<<<<<< HEAD
-</html>
->>>>>>> d873b2b (2nd version, now: 1) added time gating function 2) able to delete all data or reset today's log status)
-=======
-</html> 
->>>>>>> f5cb3c7 (this is the actual 2nd version, the earlier one actually does not funtion as expected)
