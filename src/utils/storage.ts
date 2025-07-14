@@ -27,25 +27,32 @@ export const storage = {
 
   // Settings
   getSettings: (): UserSettings => {
-    try {
-      const stored = localStorage.getItem(SETTINGS_KEY);
-      return stored ? JSON.parse(stored) : {
-        dailyWindowStart: 9,
-        dailyWindowEnd: 21, // 9 PM
-        emailNotifications: false,
-      };
-    } catch {
-      return {
-        dailyWindowStart: 9,
-        dailyWindowEnd: 21, // 9 PM
-        emailNotifications: false,
-      };
+    const stored = localStorage.getItem('mood-tracker-settings');
+    if (stored) {
+      const settings = JSON.parse(stored);
+      // Handle migration from old format
+      if (settings.email && typeof settings.email === 'string') {
+        settings.emailNotifications = {
+          enabled: false,
+          email: settings.email
+        };
+        delete settings.email;
+      }
+      return settings;
     }
+    return {
+      dailyWindowStart: 9,
+      dailyWindowEnd: 21,
+      emailNotifications: {
+        enabled: false,
+        email: ''
+      }
+    };
   },
 
   saveSettings: (settings: UserSettings): void => {
     try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      localStorage.setItem('mood-tracker-settings', JSON.stringify(settings));
     } catch (error) {
       console.error('Failed to save settings:', error);
     }

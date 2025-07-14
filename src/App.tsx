@@ -105,13 +105,11 @@ function App() {
       return stored ? JSON.parse(stored) : {
         dailyWindowStart: 9,
         dailyWindowEnd: 21, // 9 PM
-        emailNotifications: false,
       };
     } catch {
       return {
         dailyWindowStart: 9,
         dailyWindowEnd: 21, // 9 PM
-        emailNotifications: false,
       };
     }
   };

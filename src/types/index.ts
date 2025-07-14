@@ -18,8 +18,10 @@ export interface SongInfo {
 export interface UserSettings {
   dailyWindowStart: number; // Hour in 24-hour format (e.g., 9 for 9 AM)
   dailyWindowEnd: number; // Hour in 24-hour format (e.g., 22 for 10 PM)
-  emailNotifications: boolean;
-  email?: string;
+  emailNotifications?: {
+    enabled: boolean;
+    email: string;
+  };
 }
 
 export interface AppState {

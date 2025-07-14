@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Clock, Mail, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Clock, Trash2, Mail, Bell, BellOff } from 'lucide-react';
 import { UserSettings } from '../types';
 import { storage } from '../utils/storage';
 import { timeUtils } from '../utils/timeUtils';
+import { emailService } from '../utils/emailService';
 
 interface SettingsViewProps {
   settings: UserSettings;
@@ -17,8 +18,51 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const [localSettings, setLocalSettings] = useState<UserSettings>(settings);
   const [showClearData, setShowClearData] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
-  const handleSave = () => {
+  // Initialize email notifications if not present
+  useEffect(() => {
+    if (!localSettings.emailNotifications) {
+      setLocalSettings(prev => ({
+        ...prev,
+        emailNotifications: {
+          enabled: false,
+          email: ''
+        }
+      }));
+    }
+  }, [localSettings.emailNotifications]);
+
+  // Check server health on mount
+  useEffect(() => {
+    const checkServer = async () => {
+      const isHealthy = await emailService.checkServerHealth();
+      setServerStatus(isHealthy ? 'online' : 'offline');
+    };
+    checkServer();
+  }, []);
+
+  const handleSave = async () => {
+    // Handle email notification registration/unregistration
+    if (localSettings.emailNotifications) {
+      const { enabled, email } = localSettings.emailNotifications;
+      
+      if (enabled && email) {
+        setEmailStatus('loading');
+        const success = await emailService.registerEmail(
+          email, 
+          localSettings.dailyWindowStart, 
+          localSettings.dailyWindowEnd
+        );
+        setEmailStatus(success ? 'success' : 'error');
+      } else if (!enabled && email) {
+        setEmailStatus('loading');
+        await emailService.unregisterEmail(email);
+        setEmailStatus('success');
+      }
+    }
+
     onSettingsUpdate(localSettings);
   };
 
@@ -29,7 +73,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     const defaultSettings: UserSettings = {
       dailyWindowStart: 9,
       dailyWindowEnd: 21, // 9 PM
-      emailNotifications: false,
     };
     onSettingsUpdate(defaultSettings);
   };
@@ -61,6 +104,103 @@ const SettingsView: React.FC<SettingsViewProps> = ({
         >
           Save
         </button>
+      </div>
+
+      {/* Email Notifications */}
+      <div className="slow-card">
+        <div className="flex items-center space-x-2 mb-4">
+          <Mail className="w-5 h-5 text-slow-blue" />
+          <h3 className="font-medium text-slow-dark">Email Notifications</h3>
+          {serverStatus === 'checking' && (
+            <span className="text-xs text-gray-500">Checking server...</span>
+          )}
+          {serverStatus === 'online' && (
+            <span className="text-xs text-green-600">Server online</span>
+          )}
+          {serverStatus === 'offline' && (
+            <span className="text-xs text-red-600">Server offline</span>
+          )}
+        </div>
+        
+        <p className="text-sm text-gray-600 mb-4">
+          Receive gentle email reminders when your daily mood logging window opens.
+        </p>
+
+        {serverStatus === 'offline' && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800">
+              Email notifications are currently unavailable. Please ensure the backend server is running.
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slow-dark mb-2">
+              Email Address
+            </label>
+            <input
+              type="email"
+              value={localSettings.emailNotifications?.email || ''}
+              onChange={(e) => setLocalSettings(prev => ({
+                ...prev,
+                emailNotifications: {
+                  ...prev.emailNotifications!,
+                  email: e.target.value
+                }
+              }))}
+              placeholder="your.email@example.com"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slow-blue focus:border-transparent"
+              disabled={serverStatus === 'offline'}
+            />
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setLocalSettings(prev => ({
+                ...prev,
+                emailNotifications: {
+                  ...prev.emailNotifications!,
+                  enabled: !prev.emailNotifications?.enabled
+                }
+              }))}
+              disabled={!localSettings.emailNotifications?.email || serverStatus === 'offline'}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                localSettings.emailNotifications?.enabled
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              } ${(!localSettings.emailNotifications?.email || serverStatus === 'offline') ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {localSettings.emailNotifications?.enabled ? (
+                <Bell className="w-4 h-4" />
+              ) : (
+                <BellOff className="w-4 h-4" />
+              )}
+              <span>
+                {localSettings.emailNotifications?.enabled ? 'Notifications Enabled' : 'Notifications Disabled'}
+              </span>
+            </button>
+
+            {emailStatus === 'loading' && (
+              <span className="text-sm text-gray-500">Saving...</span>
+            )}
+            {emailStatus === 'success' && (
+              <span className="text-sm text-green-600">Saved!</span>
+            )}
+            {emailStatus === 'error' && (
+              <span className="text-sm text-red-600">Failed to save</span>
+            )}
+          </div>
+
+          {localSettings.emailNotifications?.enabled && (
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> You'll receive an email notification when your daily logging window opens 
+                (between {timeUtils.formatHour(localSettings.dailyWindowStart)} and {timeUtils.formatHour(localSettings.dailyWindowEnd)}).
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Daily Logging Window */}
@@ -123,47 +263,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
           <p className="text-sm text-blue-700 mt-2">
             <strong>Today's window:</strong> {timeUtils.getTodayLoggingWindowDisplay(localSettings.dailyWindowStart, localSettings.dailyWindowEnd)}
           </p>
-        </div>
-      </div>
-
-      {/* Email Notifications */}
-      <div className="slow-card">
-        <div className="flex items-center space-x-2 mb-4">
-          <Mail className="w-5 h-5 text-slow-blue" />
-          <h3 className="font-medium text-slow-dark">Email Notifications</h3>
-        </div>
-        
-        <div className="space-y-3">
-          <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={localSettings.emailNotifications}
-              onChange={(e) => setLocalSettings(prev => ({
-                ...prev,
-                emailNotifications: e.target.checked
-              }))}
-              className="rounded text-slow-blue focus:ring-slow-blue"
-            />
-            <span className="text-sm">Enable email notifications</span>
-          </label>
-          
-          {localSettings.emailNotifications && (
-            <div>
-              <label className="block text-sm font-medium text-slow-dark mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={localSettings.email || ''}
-                onChange={(e) => setLocalSettings(prev => ({
-                  ...prev,
-                  email: e.target.value
-                }))}
-                placeholder="your@email.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slow-blue focus:border-transparent"
-              />
-            </div>
-          )}
         </div>
       </div>
 
