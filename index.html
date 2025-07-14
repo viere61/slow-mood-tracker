@@ -145,8 +145,23 @@
                         What song reflects your mood?
                     </label>
                     <div class="space-y-3">
-                        <input type="text" id="songTitle" placeholder="Song title" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <input type="text" id="songArtist" placeholder="Artist" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <div class="relative">
+                            <input type="text" id="songSearch" placeholder="Search for a song..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <div id="searchResults" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                <!-- Search results will be populated here -->
+                            </div>
+                        </div>
+                        <div id="selectedSong" class="hidden p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium text-blue-800" id="selectedSongTitle"></div>
+                                    <div class="text-sm text-blue-600" id="selectedSongArtist"></div>
+                                </div>
+                                <button id="clearSelection" class="text-blue-500 hover:text-blue-700">
+                                    <i data-lucide="x" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -262,7 +277,7 @@
         let moodEntries = JSON.parse(localStorage.getItem('slow-mood-entries') || '[]');
         let settings = JSON.parse(localStorage.getItem('slow-mood-settings') || JSON.stringify({
             dailyWindowStart: 9,
-            dailyWindowEnd: 22,
+            dailyWindowEnd: 21,
             emailNotifications: false
         }));
         let todayLogStatus = JSON.parse(localStorage.getItem('slow-mood-today-logged') || 'false');
@@ -293,12 +308,15 @@
         const inputs = {
             moodSlider: document.getElementById('moodSlider'),
             moodLabel: document.getElementById('moodLabel'),
-            songTitle: document.getElementById('songTitle'),
-            songArtist: document.getElementById('songArtist'),
+            songSearch: document.getElementById('songSearch'),
             thoughts: document.getElementById('thoughts'),
             startTime: document.getElementById('startTime'),
             endTime: document.getElementById('endTime')
         };
+
+        // Song search state
+        let selectedSong = null;
+        let searchTimeout = null;
 
         // Utility functions
         function formatDate(dateString) {
@@ -385,8 +403,18 @@
                 const endHour = settings.dailyWindowEnd;
                 const availableHours = [];
                 
-                for (let hour = startHour; hour < endHour; hour++) {
-                    availableHours.push(hour);
+                // Handle special case where end time is midnight (0) and start time is later in the day
+                if (endHour === 0 && startHour > 0) {
+                    // Add hours from start to 23, then include 0 (midnight)
+                    for (let hour = startHour; hour <= 23; hour++) {
+                        availableHours.push(hour);
+                    }
+                    availableHours.push(0); // Add midnight
+                } else {
+                    // Normal case: start hour is before end hour
+                    for (let hour = startHour; hour < endHour; hour++) {
+                        availableHours.push(hour);
+                    }
                 }
                 
                 if (availableHours.length > 0) {
@@ -437,6 +465,95 @@
                 }
             }
             lucide.createIcons();
+        }
+
+        // Song search functionality
+        async function searchSongs(query) {
+            if (!query || query.length < 2) {
+                hideSearchResults();
+                return;
+            }
+
+            try {
+                // Using iTunes Search API (free, no API key required)
+                const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=10`);
+                const data = await response.json();
+                
+                if (data.results && data.results.length > 0) {
+                    showSearchResults(data.results);
+                } else {
+                    showNoResults();
+                }
+            } catch (error) {
+                console.error('Error searching songs:', error);
+                showSearchError();
+            }
+        }
+
+        function showSearchResults(results) {
+            const resultsContainer = document.getElementById('searchResults');
+            resultsContainer.innerHTML = '';
+            
+            results.forEach(song => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0';
+                resultItem.innerHTML = `
+                    <div class="font-medium text-gray-800">${song.trackName}</div>
+                    <div class="text-sm text-gray-600">${song.artistName}</div>
+                `;
+                
+                resultItem.addEventListener('click', () => selectSong(song));
+                resultsContainer.appendChild(resultItem);
+            });
+            
+            resultsContainer.classList.remove('hidden');
+        }
+
+        function showNoResults() {
+            const resultsContainer = document.getElementById('searchResults');
+            resultsContainer.innerHTML = `
+                <div class="p-3 text-gray-500 text-center">
+                    No songs found. Try a different search term.
+                </div>
+            `;
+            resultsContainer.classList.remove('hidden');
+        }
+
+        function showSearchError() {
+            const resultsContainer = document.getElementById('searchResults');
+            resultsContainer.innerHTML = `
+                <div class="p-3 text-red-500 text-center">
+                    Error searching songs. Please try again.
+                </div>
+            `;
+            resultsContainer.classList.remove('hidden');
+        }
+
+        function hideSearchResults() {
+            document.getElementById('searchResults').classList.add('hidden');
+        }
+
+        function selectSong(song) {
+            selectedSong = {
+                title: song.trackName,
+                artist: song.artistName
+            };
+            
+            // Update UI
+            inputs.songSearch.value = '';
+            hideSearchResults();
+            
+            document.getElementById('selectedSongTitle').textContent = song.trackName;
+            document.getElementById('selectedSongArtist').textContent = song.artistName;
+            document.getElementById('selectedSong').classList.remove('hidden');
+            
+            lucide.createIcons();
+        }
+
+        function clearSongSelection() {
+            selectedSong = null;
+            document.getElementById('selectedSong').classList.add('hidden');
+            inputs.songSearch.value = '';
         }
 
         function revealRandomMood() {
@@ -537,11 +654,8 @@
         buttons.backFromSettings.addEventListener('click', () => showView('home'));
 
         buttons.saveMood.addEventListener('click', () => {
-            const songTitle = inputs.songTitle.value.trim();
-            const songArtist = inputs.songArtist.value.trim();
-            
-            if (!songTitle || !songArtist) {
-                alert('Please enter both song title and artist');
+            if (!selectedSong) {
+                alert('Please search and select a song');
                 return;
             }
 
@@ -552,8 +666,8 @@
                 descriptors: [],
                 contexts: [],
                 song: {
-                    title: songTitle,
-                    artist: songArtist
+                    title: selectedSong.title,
+                    artist: selectedSong.artist
                 },
                 thoughts: inputs.thoughts.value.trim() || undefined
             };
@@ -568,9 +682,8 @@
             // Reset form
             inputs.moodSlider.value = 5;
             inputs.moodLabel.textContent = 'Neutral';
-            inputs.songTitle.value = '';
-            inputs.songArtist.value = '';
             inputs.thoughts.value = '';
+            clearSongSelection();
 
             showView('home');
             updateLoggingIndicator();
@@ -600,7 +713,7 @@
                 moodEntries = [];
                 settings = {
                     dailyWindowStart: 9,
-                    dailyWindowEnd: 22,
+                    dailyWindowEnd: 21,
                     emailNotifications: false
                 };
                 todayLogStatus = false;
@@ -631,6 +744,37 @@
         inputs.moodSlider.addEventListener('input', (e) => {
             inputs.moodLabel.textContent = getMoodLabel(parseInt(e.target.value));
         });
+
+        // Song search event listeners
+        inputs.songSearch.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            
+            // Clear previous timeout
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            // Debounce search to avoid too many API calls
+            searchTimeout = setTimeout(() => {
+                searchSongs(query);
+            }, 300);
+        });
+
+        inputs.songSearch.addEventListener('focus', () => {
+            if (inputs.songSearch.value.trim().length >= 2) {
+                searchSongs(inputs.songSearch.value.trim());
+            }
+        });
+
+        // Hide search results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#songSearch') && !e.target.closest('#searchResults')) {
+                hideSearchResults();
+            }
+        });
+
+        // Clear song selection
+        document.getElementById('clearSelection').addEventListener('click', clearSongSelection);
 
         // Initialize
         populateTimeOptions();
