@@ -31,13 +31,13 @@ export const storage = {
       const stored = localStorage.getItem(SETTINGS_KEY);
       return stored ? JSON.parse(stored) : {
         dailyWindowStart: 9,
-        dailyWindowEnd: 22,
+        dailyWindowEnd: 21, // 9 PM
         emailNotifications: false,
       };
     } catch {
       return {
         dailyWindowStart: 9,
-        dailyWindowEnd: 22,
+        dailyWindowEnd: 21, // 9 PM
         emailNotifications: false,
       };
     }
@@ -64,6 +64,18 @@ export const storage = {
   clearAllData: (): void => {
     localStorage.removeItem(MOOD_ENTRIES_KEY);
     localStorage.removeItem(SETTINGS_KEY);
+    localStorage.removeItem(LAST_LOG_DATE_KEY);
+  },
+
+  clearMoodEntries: (): void => {
+    localStorage.removeItem(MOOD_ENTRIES_KEY);
+  },
+
+  clearLastLogDate: (): void => {
+    localStorage.removeItem(LAST_LOG_DATE_KEY);
+  },
+
+  resetTodayLogStatus: (): void => {
     localStorage.removeItem(LAST_LOG_DATE_KEY);
   },
 }; 

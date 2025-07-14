@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Clock, Mail, Trash2 } from 'lucide-react';
 import { UserSettings } from '../types';
 import { storage } from '../utils/storage';
+import { timeUtils } from '../utils/timeUtils';
 
 interface SettingsViewProps {
   settings: UserSettings;
@@ -27,7 +28,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     // Reset to default settings
     const defaultSettings: UserSettings = {
       dailyWindowStart: 9,
-      dailyWindowEnd: 22,
+      dailyWindowEnd: 21, // 9 PM
       emailNotifications: false,
     };
     onSettingsUpdate(defaultSettings);
@@ -118,6 +119,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({
           <p className="text-sm text-blue-800">
             <strong>Note:</strong> The app will randomly select one hour within this window each day 
             when you can log your mood. This creates anticipation and encourages mindful reflection.
+          </p>
+          <p className="text-sm text-blue-700 mt-2">
+            <strong>Today's window:</strong> {timeUtils.getTodayLoggingWindowDisplay(localSettings.dailyWindowStart, localSettings.dailyWindowEnd)}
           </p>
         </div>
       </div>

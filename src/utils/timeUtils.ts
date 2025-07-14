@@ -1,16 +1,49 @@
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
 
 export const timeUtils = {
-  // Check if current time is within the user's daily logging window
+  // Generate a random 1-hour window within the user's daily range for today
+  getTodayLoggingWindow: (startHour: number, endHour: number): { start: number; end: number } => {
+    const today = new Date().toISOString().split('T')[0];
+    const seed = today.split('-').join(''); // Use date as seed for consistent daily window
+    const randomHour = timeUtils.getRandomHourFromSeed(seed, startHour, endHour);
+    return {
+      start: randomHour,
+      end: randomHour + 1
+    };
+  },
+
+  // Generate consistent random hour based on date seed
+  getRandomHourFromSeed: (seed: string, startHour: number, endHour: number): number => {
+    const num = parseInt(seed, 10);
+    const range = endHour - startHour;
+    const randomIndex = num % range;
+    return startHour + randomIndex;
+  },
+
+  // Check if current time is within today's randomly selected 1-hour logging window
   isInLoggingWindow: (startHour: number, endHour: number): boolean => {
     const now = new Date();
     const currentHour = now.getHours();
-    return currentHour >= startHour && currentHour < endHour;
+    const todayWindow = timeUtils.getTodayLoggingWindow(startHour, endHour);
+    return currentHour >= todayWindow.start && currentHour < todayWindow.end;
   },
 
-  // Generate a random hour within the user's window for today
-  getRandomLoggingHour: (startHour: number, endHour: number): number => {
-    return Math.floor(Math.random() * (endHour - startHour)) + startHour;
+  // Get today's logging window for display purposes
+  getTodayLoggingWindowDisplay: (startHour: number, endHour: number): string => {
+    const window = timeUtils.getTodayLoggingWindow(startHour, endHour);
+    const startTime = timeUtils.formatHour(window.start);
+    const endTime = timeUtils.formatHour(window.end);
+    return `${startTime} - ${endTime}`;
+  },
+
+  // Format hour for display
+  formatHour: (hour: number): string => {
+    const date = new Date();
+    date.setHours(hour, 0, 0, 0);
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      hour12: true 
+    });
   },
 
   // Check if user can log today (hasn't logged yet)
@@ -45,7 +78,6 @@ export const timeUtils = {
   isNewDay: (lastLogDate: string | null): boolean => {
     if (!lastLogDate) return true;
     const lastLog = parseISO(lastLogDate);
-    const today = new Date();
     return !isToday(lastLog);
   },
 }; 

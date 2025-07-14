@@ -8,7 +8,10 @@ interface HomeViewProps {
   lastLogDate: string | null;
   onStartLogging: () => void;
   onReview: () => void;
-  onSettings: () => void;
+  settings: {
+    dailyWindowStart: number;
+    dailyWindowEnd: number;
+  };
 }
 
 const HomeView: React.FC<HomeViewProps> = ({
@@ -17,7 +20,7 @@ const HomeView: React.FC<HomeViewProps> = ({
   lastLogDate,
   onStartLogging,
   onReview,
-  onSettings
+  settings
 }) => {
   const getStatusMessage = () => {
     if (!canLogToday) {
@@ -30,17 +33,19 @@ const HomeView: React.FC<HomeViewProps> = ({
     }
     
     if (isLoggingWindow) {
+      const todayWindow = timeUtils.getTodayLoggingWindowDisplay(settings.dailyWindowStart, settings.dailyWindowEnd);
       return {
         title: "Time to reflect",
-        message: "The invitation to log your mood is now open. Take a moment to pause and consider how you're feeling.",
+        message: `The invitation to log your mood is now open (${todayWindow}). Take a moment to pause and consider how you're feeling.`,
         icon: Clock,
         color: "text-green-600"
       };
     }
     
+    const todayWindow = timeUtils.getTodayLoggingWindowDisplay(settings.dailyWindowStart, settings.dailyWindowEnd);
     return {
       title: "Waiting for the moment",
-      message: "Your daily mood logging window hasn't opened yet. The app will invite you when it's time.",
+      message: `Your daily mood logging window (${todayWindow}) hasn't opened yet. The app will invite you when it's time.`,
       icon: Clock,
       color: "text-gray-600"
     };
@@ -49,11 +54,20 @@ const HomeView: React.FC<HomeViewProps> = ({
   const status = getStatusMessage();
   const StatusIcon = status.icon;
 
+  // DEBUG: Log the time gating logic
+  const todayWindow = timeUtils.getTodayLoggingWindow(settings.dailyWindowStart, settings.dailyWindowEnd);
+  const now = new Date();
+  const currentHour = now.getHours();
+  // eslint-disable-next-line no-console
+  console.log('[DEBUG] Today window:', todayWindow, 'Current hour:', currentHour);
+
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* DEBUG MARKER */}
+      <div className="text-center text-xs text-red-500 font-bold">DEBUG: v1</div>
       {/* Welcome Section */}
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-light text-slow-dark">Welcome</h2>
+        <h2 className="text-2xl font-light text-slow-dark">Welcome - TESTING HOT RELOAD</h2>
         <p className="text-gray-600 text-sm">
           A mindful approach to tracking your emotional journey through music
         </p>
@@ -66,6 +80,9 @@ const HomeView: React.FC<HomeViewProps> = ({
           <div className="flex-1">
             <h3 className="font-medium text-slow-dark">{status.title}</h3>
             <p className="text-sm text-gray-600 mt-1">{status.message}</p>
+            <p className="text-xs text-gray-500 mt-2">
+              Current time: {timeUtils.getCurrentTime()}
+            </p>
           </div>
         </div>
       </div>

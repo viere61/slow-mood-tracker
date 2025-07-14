@@ -4,14 +4,12 @@ import { Music, Settings, Home, Clock } from 'lucide-react';
 interface HeaderProps {
   currentView: string;
   onViewChange: (view: any) => void;
-  canLogToday: boolean;
   isLoggingWindow: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
   currentView, 
   onViewChange, 
-  canLogToday, 
   isLoggingWindow 
 }) => {
   return (
