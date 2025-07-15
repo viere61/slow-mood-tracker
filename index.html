@@ -242,31 +242,6 @@
 
                 <div class="slow-card">
                     <div class="flex items-center space-x-2 mb-4">
-                        <i data-lucide="mail" class="w-5 h-5 text-blue-500"></i>
-                        <h3 class="font-medium text-gray-800">Email Notifications</h3>
-                    </div>
-                    
-                    <p class="text-sm text-gray-600 mb-4">
-                        Get notified when your daily mood logging window opens.
-                    </p>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-800 mb-2">Email Address</label>
-                            <input type="email" id="emailInput" placeholder="your@email.com" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                        
-                        <div class="flex items-center space-x-2">
-                            <input type="checkbox" id="emailNotifications" class="rounded text-blue-500 focus:ring-blue-500">
-                            <label for="emailNotifications" class="text-sm text-gray-700">Enable email notifications</label>
-                        </div>
-                        
-                        <div id="emailStatus" class="text-sm"></div>
-                    </div>
-                </div>
-
-                <div class="slow-card">
-                    <div class="flex items-center space-x-2 mb-4">
                         <i data-lucide="trash-2" class="w-5 h-5 text-red-500"></i>
                         <h3 class="font-medium text-gray-800">Data Management</h3>
                     </div>
@@ -336,8 +311,6 @@
             thoughts: document.getElementById('thoughts'),
             startTime: document.getElementById('startTime'),
             endTime: document.getElementById('endTime'),
-            emailInput: document.getElementById('emailInput'),
-            emailNotifications: document.getElementById('emailNotifications')
         };
 
         // Song search state
@@ -804,99 +777,6 @@
 
         // Clear song selection
         document.getElementById('clearSelection').addEventListener('click', clearSongSelection);
-
-        // Email notification functions
-        async function registerEmail(email) {
-            try {
-                const response = await fetch('http://localhost:3001/api/email/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        email: email,
-                        dailyWindowStart: settings.dailyWindowStart,
-                        dailyWindowEnd: settings.dailyWindowEnd
-                    })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    showEmailStatus('Email registered successfully!', 'text-green-600');
-                } else {
-                    showEmailStatus('Failed to register email: ' + data.error, 'text-red-600');
-                }
-            } catch (error) {
-                showEmailStatus('Error connecting to server. Make sure the backend is running.', 'text-red-600');
-            }
-        }
-
-        async function unregisterEmail(email) {
-            try {
-                const response = await fetch('http://localhost:3001/api/email/unregister', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ email: email })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    showEmailStatus('Email unregistered successfully!', 'text-green-600');
-                } else {
-                    showEmailStatus('Failed to unregister email: ' + data.error, 'text-red-600');
-                }
-            } catch (error) {
-                showEmailStatus('Error connecting to server.', 'text-red-600');
-            }
-        }
-
-        async function checkEmailStatus(email) {
-            try {
-                const response = await fetch(`http://localhost:3001/api/email/status/${encodeURIComponent(email)}`);
-                const data = await response.json();
-                
-                if (data.subscribed) {
-                    inputs.emailNotifications.checked = true;
-                    showEmailStatus('Email notifications are enabled.', 'text-green-600');
-                } else {
-                    inputs.emailNotifications.checked = false;
-                    showEmailStatus('Email notifications are disabled.', 'text-gray-600');
-                }
-            } catch (error) {
-                showEmailStatus('Could not check email status. Make sure the backend is running.', 'text-yellow-600');
-            }
-        }
-
-        function showEmailStatus(message, className) {
-            const statusElement = document.getElementById('emailStatus');
-            statusElement.textContent = message;
-            statusElement.className = 'text-sm ' + className;
-        }
-
-        // Email notification event listeners
-        inputs.emailNotifications.addEventListener('change', () => {
-            const email = inputs.emailInput.value.trim();
-            if (!email || !email.includes('@')) {
-                showEmailStatus('Please enter a valid email address first.', 'text-red-600');
-                inputs.emailNotifications.checked = false;
-                return;
-            }
-            
-            if (inputs.emailNotifications.checked) {
-                registerEmail(email);
-            } else {
-                unregisterEmail(email);
-            }
-        });
-
-        inputs.emailInput.addEventListener('blur', () => {
-            const email = inputs.emailInput.value.trim();
-            if (email && email.includes('@')) {
-                checkEmailStatus(email);
-            }
-        });
 
         // Initialize
         populateTimeOptions();
