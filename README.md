@@ -46,6 +46,3 @@ All data is stored in your browser's local storage. Nothing is sent to any serve
 - `src/` — Main frontend source code (React, TypeScript)
 - `public/` — Static assets
 - `index.html` — Main HTML entry point
-
-## License
-MIT 
